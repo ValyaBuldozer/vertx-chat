@@ -1,6 +1,12 @@
 .gradle
 /build/
 
+node_modules/
+.vertx/
+out/
+.idea/
+dist/
+
 # Ignore Gradle GUI config
 gradle-app.setting
 
