@@ -2,7 +2,6 @@ package web.valyabuldozer.chat.vertx;
 
 import io.vertx.core.Vertx;
 
-import java.util.ArrayList;
 
 public class VerticleLoader {
     public static void load() {

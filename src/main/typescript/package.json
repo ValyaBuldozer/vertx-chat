@@ -1,7 +1,7 @@
 {
-  "name": "react-calc",
-  "version": "1.0.0",
-  "description": "A ready to use simple webpack boilerplate",
+  "name": "chat-ui",
+  "version": "1.0",
+  "description": "Simple ui for socket chat",
   "main": "src/index.tsx",
   "scripts": {
     "start": "webpack-dev-server --mode development --open",
@@ -9,13 +9,24 @@
   },
   "author": "ValyaBuldozer",
   "devDependencies": {
-    "typescript": "^3.0.3",
-    "react": "^16.5.1",
-    "react-dom": "^16.5.1",
     "@types/react": "^16.4.14",
-    "@types/react-dom": "^16.0.7",
-    "webpack": "^4.19.1",
+    "@types/react-dom": "^16.0.8",
     "awesome-typescript-loader": "^5.2.1",
-    "webpack-cli": "^3.1.0"
+    "css-loader": "^1.0.0",
+    "react": "^16.5.1",
+    "react-dom": "^16.5.2",
+    "style-loader": "^0.23.0",
+    "typescript": "^3.0.3",
+    "webpack": "^4.19.1",
+    "webpack-cli": "^3.1.0",
+    "webpack-dev-server": "^3.1.9"
+  },
+  "dependencies": {
+    "@material-ui/core": "^3.1.2",
+    "html-webpack-plugin": "^3.2.0",
+    "material-ui": "^0.20.2",
+    "mobx": "^5.5.0",
+    "mobx-react": "^5.2.8",
+    "vertx3-eventbus-client": "^3.5.3"
   }
 }

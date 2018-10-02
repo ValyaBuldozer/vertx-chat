@@ -6,6 +6,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.bridge.PermittedOptions;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.handler.sockjs.BridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 
@@ -39,6 +40,8 @@ public class Server extends AbstractVerticle {
                     .end("vertx test");
         });
 
+        router.route().handler(StaticHandler.create().setCachingEnabled(false));
+
         vertx.createHttpServer().
                 requestHandler(router::accept)
                 .listen(
@@ -65,24 +68,11 @@ public class Server extends AbstractVerticle {
 
     private void createSockHandler() {
         BridgeOptions bridgeOptions = new BridgeOptions()
-                .addInboundPermitted(new PermittedOptions().setAddress(
-                        config().getString("inbound.address", DEFAULT_INBOUND_ADDRESS)))
-                .addOutboundPermitted(new PermittedOptions().setAddress(
-                        config().getString("outbound.address", DEFAULT_OUTBOUND_ADDRESS)));
+                .addInboundPermitted(new PermittedOptions().setAddress(DEFAULT_INBOUND_ADDRESS))
+                .addOutboundPermitted(new PermittedOptions().setAddress(DEFAULT_INBOUND_ADDRESS));
 
         handler.bridge(bridgeOptions, event -> {
             JsonObject rawMessage = event.getRawMessage();
-
-            if (rawMessage == null) {
-                System.out.println("Recieved empty message");
-                return;
-            }
-
-            if (!rawMessage.getString("address").equals(
-                    config().getString("inbound.address", DEFAULT_INBOUND_ADDRESS))) {
-                System.out.println("Recieved message from unknown address : " + rawMessage.getString("address"));
-                return;
-            }
 
             switch (event.type()) {
                 case PUBLISH:
@@ -94,6 +84,8 @@ public class Server extends AbstractVerticle {
                 case SOCKET_CLOSED:
                     handleCloseEvent(rawMessage);
                     break;
+                case SOCKET_PING:
+                    break;
                 default:
                     System.out.println("WARNING : Unknown event type");
                     break;
@@ -103,19 +95,50 @@ public class Server extends AbstractVerticle {
     }
 
     private void handlePublishEvent(JsonObject rawMessage) {
-        String username = rawMessage.getString("username", "unknown");
-        String message = rawMessage.getString("message", "");
-        DeliveryOptions options = new DeliveryOptions().addHeader("username", username);
+        if(rawMessage == null) {
+            System.out.println("WARNING : empty message at publish handler");
+            return;
+        }
 
-        vertx.eventBus().publish(config().getString("outbound.address", DEFAULT_OUTBOUND_ADDRESS),
+        String username = rawMessage.getString("username", "unknown");
+        String inboundMessage = rawMessage.getString("body", "");
+        DeliveryOptions options  = new DeliveryOptions().addHeader("type", "publish");
+        JsonObject message = new JsonObject()
+                .put("type", "publish")
+                .put("message", inboundMessage)
+                .put("username", username);
+
+        vertx.eventBus().publish(DEFAULT_INBOUND_ADDRESS,
                 message, options);
     }
 
-    private void handleCloseEvent(JsonObject event) {
+    private void handleCloseEvent(JsonObject rawMessage) {
+        if(rawMessage == null) {
+            System.out.println("WARNING : empty message at close handler");
+            return;
+        }
 
+        String username = rawMessage.getString("username", "unknown");
+        JsonObject message = new JsonObject()
+                .put("type", "user_disconnect")
+                .put("username", username);
+
+        vertx.eventBus().publish(config().getString("outbound.address", DEFAULT_OUTBOUND_ADDRESS),
+                message);
     }
 
-    private void handleRegisterEvent(JsonObject event) {
+    private void handleRegisterEvent(JsonObject rawMessage) {
+        if(rawMessage == null) {
+            System.out.println("WARNING : empty message at register handler");
+            return;
+        }
 
+        String username = rawMessage.getString("username", "unknown");
+        JsonObject message = new JsonObject()
+                .put("type", "user_connected")
+                .put("username", username);
+
+        vertx.eventBus().publish(config().getString("outbound.address", DEFAULT_OUTBOUND_ADDRESS),
+                message);
     }
 }
