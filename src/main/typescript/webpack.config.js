@@ -14,7 +14,8 @@ module.exports = {
         compress: true,
         port: 9000,
         proxy: {
-            '/eventbus' : {target: 'http://localhost:8080/', ws : true}
+            '/eventbus' : {target: 'http://localhost:8080/', ws : true},
+            '/socketconfig' : 'http://localhost:8080/'
         }
     },
     output: {

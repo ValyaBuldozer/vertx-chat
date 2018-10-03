@@ -2,22 +2,32 @@ import * as EventBus from "vertx3-eventbus-client";
 import {IMessage} from "../Classes/IMessage";
 
 export default class SocketConnection {
+    private eventbusaddress : string;
     private eventbus : EventBus;
 
     public onpublish : Function;
     public ondisconnect : Function;
     public onregister : Function;
 
-    private readonly eventbusaddress : string;
-
-    constructor(eventbusAddress : string, ) {
-        this.eventbusaddress = eventbusAddress;
-        this.eventbus = new EventBus("/eventbus/");
-
+    public connect(eventBusUrl : string, eventBusAddress : string) {
+        this.eventbusaddress = eventBusAddress;
+        this.eventbus = new EventBus(eventBusUrl);
         this.eventbus.onopen = () => {
             this.eventbus.registerHandler(this.eventbusaddress,
                 (err, msg) => {this.handleMessage(err, msg)});
         }
+    }
+
+    public disconnect() {
+        if (this.eventbus) {
+            this.eventbus.close();
+        } else {
+            throw new Error("Trying to close not open connection");
+        }
+    }
+
+    public isConnected() {
+        return (this.eventbus);
     }
 
     handleMessage(err, msg) {
@@ -47,7 +57,7 @@ export default class SocketConnection {
         }
     }
 
-    sendMessage(message : string) {
-        this.eventbus.publish(this.eventbusaddress, message);
+    sendMessage(message : string, username : string) {
+        this.eventbus.publish(this.eventbusaddress, message, {"username" : username});
     }
 }

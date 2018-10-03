@@ -6,6 +6,7 @@ import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.bridge.PermittedOptions;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.handler.sockjs.BridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
@@ -18,6 +19,7 @@ public class Server extends AbstractVerticle {
     private final int DEFAULT_HTTP_PORT = 8080;
     private final String DEFAULT_INBOUND_ADDRESS = "client.to.server";
     private final String DEFAULT_OUTBOUND_ADDRESS = "server.to.client";
+    private final String DEFAULT_SOCKET_URL = "/eventbus/";
     private SockJSHandler handler;
 
     @Override
@@ -32,13 +34,9 @@ public class Server extends AbstractVerticle {
         Router router = Router.router(vertx);
 
         handler = SockJSHandler.create(vertx);
-        router.route("/eventbus/*").handler(handler);
+        router.route(DEFAULT_SOCKET_URL + "*").handler(handler);
 
-        router.route("/rest/").handler(routerContext -> {
-            HttpServerResponse response = routerContext.response();
-            response.putHeader("content-type", "text/plain")
-                    .end("vertx test");
-        });
+        router.route("/socketconfig").handler(this::configRequestHandler);
 
         router.route().handler(StaticHandler.create().setCachingEnabled(false));
 
@@ -140,5 +138,14 @@ public class Server extends AbstractVerticle {
 
         vertx.eventBus().publish(config().getString("outbound.address", DEFAULT_OUTBOUND_ADDRESS),
                 message);
+    }
+
+    private void configRequestHandler(RoutingContext context) {
+        HttpServerResponse response = context.response();
+        JsonObject config = new JsonObject()
+                .put("url", DEFAULT_SOCKET_URL)
+                .put("ebaddress", DEFAULT_INBOUND_ADDRESS);
+        response.putHeader("content-type", "application/json")
+                .end(config.toString());
     }
 }
