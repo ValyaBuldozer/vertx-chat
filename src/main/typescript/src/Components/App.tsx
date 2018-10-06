@@ -8,7 +8,7 @@ import SocketConnection from "../Network/SocketConnection"
 import {InputForm} from "./InputFrom";
 import {string} from "prop-types";
 import {Message} from "../Classes/IMessage";
-import {ChatHistory} from "./ChatHistory";
+import ChatHistory from "./ChatHistory";
 
 @observer
 export class App extends Component {
@@ -21,7 +21,7 @@ export class App extends Component {
 
     constructor(props) {
         super(props);
-
+        this.messages.push(...[new Message("test", "test", "test"), new Message("test","test","test")])
     }
 
     componentWillMount() {

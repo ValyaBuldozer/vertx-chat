@@ -1,9 +1,9 @@
 import * as React from "react";
-import {ChatMessage} from "./ChatMessage";
+import ChatMessage from "./ChatMessage";
+import {observer} from "mobx-react";
 
 
-
-export const ChatHistory = ({messages}) => {
+const ChatHistory = ({messages}) => {
 
     return(
         <div>
@@ -15,3 +15,5 @@ export const ChatHistory = ({messages}) => {
         </div>
     )
 }
+
+export default observer(ChatHistory);

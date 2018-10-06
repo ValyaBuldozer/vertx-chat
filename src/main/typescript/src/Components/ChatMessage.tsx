@@ -1,11 +1,12 @@
 import * as React from "react";
 import {Typography} from "@material-ui/core";
 import "../styles.css";
+import {observer} from "mobx-react";
 
-export const ChatMessage = ({message, username}) => {
+const ChatMessage = ({message, username}) => {
     return(
         <div className="messageDiv">
-            <Typography variant="body2" gutterBottom>
+            <Typography variant="display1" gutterBottom>
                 {username}
             </Typography>
             <Typography variant="body1" gutterBottom>
@@ -14,3 +15,5 @@ export const ChatMessage = ({message, username}) => {
         </div>
     )
 }
+
+export default observer(ChatMessage);
