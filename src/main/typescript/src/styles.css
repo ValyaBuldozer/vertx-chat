@@ -1,0 +1,19 @@
+.inputRootDiv {
+    position: fixed;
+    bottom: 10px;
+    width: 100%;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+}
+
+.loginPaper {
+    align-items: center;
+    display: flex;
+    padding: 10px 25px;
+}
+
+.messageDiv {
+    display: flex;
+    align-items: flex-end;
+}
