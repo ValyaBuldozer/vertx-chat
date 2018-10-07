@@ -1,0 +1,45 @@
+plugins {
+    id 'java'
+}
+
+version '1.0-SNAPSHOT'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.1.1'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.1.1'
+
+    compile group: 'org.apache.logging.log4j', name: 'log4j-core', version: '2.8.2'
+    compile group: 'com.google.code.gson', name: 'gson', version: '2.8.5'
+
+    compile 'io.vertx:vertx-core:3.5.3'
+    compile 'io.vertx:vertx-web:3.5.3'
+    compile 'io.vertx:vertx-config:3.5.3'
+}
+
+//mainClassName = 'Main'
+//task vertx {
+//        new File(".vertx").eachDir() { dir ->
+//            copy {
+//                with: "src/main/resources/webroot"
+//                into: "src"
+//            }
+//        }
+//}
+
+task abcd(type: Copy) {
+    from "src/main/resources/webroot"
+    into "src"
+}
+
+
+task webpack(type: Exec) {
+    workingDir 'src/main/typescript'
+    commandLine "cmd","/c", '.\\node_modules\\.bin\\webpack'
+}
+
