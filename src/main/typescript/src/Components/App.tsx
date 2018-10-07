@@ -1,40 +1,33 @@
 import * as React from "react";
 import { Component } from "react";
-import {IObservableArray, observable} from "mobx";
-import { observer } from "mobx-react";
-import * as EventBus from "vertx3-eventbus-client";
-import {Button, TextField} from "@material-ui/core";
-import SocketConnection from "../Network/SocketConnection"
-import {InputForm} from "./InputFrom";
-import {string} from "prop-types";
-import {Message} from "../Classes/IMessage";
-import ChatHistory from "./ChatHistory";
+import { connect } from "react-redux";
+import {Input} from "./InputFrom";
+import { Chat } from "./ChatHistory";
+import { addMessage } from "../Reducers/reducersCreactor";
+import {socketConnection as connection} from "../Network/SocketConnection";
 
-@observer
-export class App extends Component {
 
-    @observable private messages = new Array<Message>();
-    @observable private username : string;
-    @observable private isAuthorized : boolean;
+interface IAppProps {
+    username : string;
+    onMessageHandled : Function;
+}
 
-    private connection  : SocketConnection = new SocketConnection();
-
+class AppComponent extends Component<IAppProps> {
     constructor(props) {
         super(props);
-        this.messages.push(...[new Message("test", "test", "test"), new Message("test","test","test")])
     }
 
     componentWillMount() {
-        if(!this.connection.isConnected()) {
-            this.setUpSocketConnection(this.messageHandler)
+        if(!connection.isConnected()) {
+            this.setUpSocketConnection(this.props.onMessageHandled);
         }
     }
 
     private setUpSocketConnection(messageHandler : Function) {
         this.loadConfigs(({url, ebaddress}) => {
-            this.connection.connect(url, ebaddress);
-            this.connection.onpublish = (username, message) => {
-                messageHandler.apply(this, [username, message]);
+            connection.connect(url, ebaddress);
+            connection.onpublish = (username, text) => {
+                messageHandler({username, text});
             };
         });
     }
@@ -58,28 +51,24 @@ export class App extends Component {
         request.send(null);
     }
 
-    messageHandler(username : string, message : string) {
-        this.messages.push(new Message("publish",username,  message));
-    }
-
-    handleLogin(username : string) {
-        this.username = username;
-        this.isAuthorized = true;
-    }
-
-    onSubmit(message : string) {
-        this.connection.sendMessage(message, this.username);
-    }
-
     render() {
         console.log("render");
         return (
             <div>
-                <ChatHistory messages={this.messages}/>
-                <InputForm onSubmit={(msg) => this.onSubmit(msg)}
-                            isAuthorized={this.isAuthorized}
-                            onLogin={(username) => this.handleLogin(username)}/>
+                <Chat />
+                <Input/>
             </div>
         )
     }
 }
+
+export const App = connect(
+    state => ({
+        username : state.username
+    }),
+    dispatch => ({
+        onMessageHandled(message) {
+            dispatch(addMessage(message));
+        }
+    })
+)(AppComponent);

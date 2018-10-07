@@ -40,7 +40,7 @@ export default class SocketConnection {
         switch (message.type) {
             case "publish":
                 if (this.onpublish) {
-                    this.onpublish(message.username, message.message);
+                    this.onpublish(message.username, message.text);
                 }
                 break;
             case "user_disconnect":
@@ -57,7 +57,9 @@ export default class SocketConnection {
         }
     }
 
-    sendMessage(message : string, username : string) {
-        this.eventbus.publish(this.eventbusaddress, message, {"username" : username});
+    sendMessage({username, text}) {
+        this.eventbus.publish(this.eventbusaddress, text, {"username" : username});
     }
 }
+
+export const socketConnection = new SocketConnection();

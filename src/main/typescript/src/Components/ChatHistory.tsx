@@ -1,7 +1,6 @@
 import * as React from "react";
 import ChatMessage from "./ChatMessage";
-import {observer} from "mobx-react";
-
+import { connect } from "react-redux";
 
 const ChatHistory = ({messages}) => {
 
@@ -9,11 +8,16 @@ const ChatHistory = ({messages}) => {
         <div>
             {messages.map((msg) => {
                 return(
-                    <ChatMessage message={msg.message} username={msg.username}/>
+                    <ChatMessage text={msg.text} username={msg.username} key={msg.id}/>
                 )
             })}
         </div>
     )
 }
 
-export default observer(ChatHistory);
+export const Chat = connect(
+    state =>
+        ({
+            messages : state.messages
+        })
+)(ChatHistory);

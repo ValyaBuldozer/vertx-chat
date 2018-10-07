@@ -23,10 +23,12 @@
   },
   "dependencies": {
     "@material-ui/core": "^3.1.2",
+    "@types/uuid": "^3.4.4",
     "html-webpack-plugin": "^3.2.0",
     "material-ui": "^0.20.2",
-    "mobx": "^5.5.0",
-    "mobx-react": "^5.2.8",
+    "react-redux": "^5.0.7",
+    "redux": "^4.0.0",
+    "uuid": "^3.3.2",
     "vertx3-eventbus-client": "^3.5.3"
   }
 }

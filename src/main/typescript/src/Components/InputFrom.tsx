@@ -1,23 +1,35 @@
 import * as React from "react";
 import {Button, TextField, Paper} from "@material-ui/core";
-import {observable} from "mobx";
-import {observer} from "mobx-react";
+import { connect } from "react-redux";
 import {Component} from "react";
+import { socketConnection as connection } from "../Network/SocketConnection";
 import "../styles.css";
+import { logIn,addMessage } from "../Reducers/reducersCreactor";
 
 interface  IFormProps {
+    username : string;
     onSubmit : Function;
     onLogin : Function;
     isAuthorized : boolean;
 }
 
-@observer
-export class InputForm extends Component<IFormProps> {
+interface IFormState {
+    message : string
+}
 
-    @observable message : string;
+class InputForm extends Component<IFormProps, IFormState> {
+    constructor(props) {
+        super(props);
+        this.state = {
+            message : ""
+        }
+    }
 
     handleChange = (event) => {
-        this.message = event.target.value;
+        this.setState({
+            ...this.state,
+            message : event.target.value
+        });
     }
 
     render() {
@@ -26,12 +38,14 @@ export class InputForm extends Component<IFormProps> {
             <div className="inputRootDiv">
                 <Paper className="loginPaper">
                     <TextField  style={{width: 400}}
-                                value={this.message}
+                                value={this.state.message}
                                 onChange={(e) => this.handleChange(e)}
                                 label={isAuthorized ? "Message" : "Username"}/>
                     <Button onClick={() => isAuthorized ?
-                                            onSubmit(this.message) :
-                                            onLogin(this.message)}
+                                            onSubmit({
+                                                text : this.state.message,
+                                                username : this.props.username}) :
+                                            onLogin(this.state.message)}
                             variant={"text"}>
                         {isAuthorized ? "SEND" : "LOGIN"}
                     </Button>
@@ -40,3 +54,18 @@ export class InputForm extends Component<IFormProps> {
         );
     }
 }
+
+export const Input = connect(
+    state => ({
+        username : state.user.username,
+        isAuthorized : state.user.isAuthorized
+    }),
+    dispatch => ({
+        onSubmit(message) {
+            connection.sendMessage(message);
+        },
+        onLogin(username : string) {
+            dispatch(logIn(username));
+        }
+    })
+)(InputForm);

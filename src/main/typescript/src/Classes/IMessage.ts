@@ -1,17 +1,17 @@
 export interface IMessage {
     type : string;
     username : string;
-    message : string;
+    text : string;
 }
 
 export class Message implements IMessage {
     public type : string;
     public username : string;
-    public message : string;
+    public text : string;
 
     constructor(type : string, username : string = "", message : string = "") {
         this.username = username;
-        this.message = message;
+        this.text = message;
         this.type = type;
     }
 }

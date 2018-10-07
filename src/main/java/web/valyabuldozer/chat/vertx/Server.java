@@ -94,16 +94,16 @@ public class Server extends AbstractVerticle {
 
     private void handlePublishEvent(JsonObject rawMessage) {
         if(rawMessage == null) {
-            System.out.println("WARNING : empty message at publish handler");
+            System.out.println("WARNING : empty text at publish handler");
             return;
         }
 
-        String username = rawMessage.getString("username", "unknown");
+        String username = rawMessage.getJsonObject("headers").getString("username", "unknown");
         String inboundMessage = rawMessage.getString("body", "");
         DeliveryOptions options  = new DeliveryOptions().addHeader("type", "publish");
         JsonObject message = new JsonObject()
                 .put("type", "publish")
-                .put("message", inboundMessage)
+                .put("text", inboundMessage)
                 .put("username", username);
 
         vertx.eventBus().publish(DEFAULT_INBOUND_ADDRESS,
@@ -112,7 +112,7 @@ public class Server extends AbstractVerticle {
 
     private void handleCloseEvent(JsonObject rawMessage) {
         if(rawMessage == null) {
-            System.out.println("WARNING : empty message at close handler");
+            System.out.println("WARNING : empty text at close handler");
             return;
         }
 
@@ -127,7 +127,7 @@ public class Server extends AbstractVerticle {
 
     private void handleRegisterEvent(JsonObject rawMessage) {
         if(rawMessage == null) {
-            System.out.println("WARNING : empty message at register handler");
+            System.out.println("WARNING : empty text at register handler");
             return;
         }
 
