@@ -1,22 +1,25 @@
 import * as React from "react";
 import ChatMessage from "./ChatMessage";
 import { connect } from "react-redux";
+import {IState} from "../store";
+import {Paper} from "@material-ui/core";
 
 const ChatHistory = ({messages}) => {
-
+    console.log("messages");
+    console.log(messages);
     return(
-        <div>
+        <Paper className="chatHistoryRoot" elevation={1}>
             {messages.map((msg) => {
                 return(
-                    <ChatMessage text={msg.text} username={msg.username} key={msg.id}/>
+                    <ChatMessage {...msg} key={msg.id}/>
                 )
             })}
-        </div>
+        </Paper>
     )
 }
 
 export const Chat = connect(
-    state =>
+    (state :IState ) =>
         ({
             messages : state.messages
         })

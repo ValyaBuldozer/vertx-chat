@@ -22,24 +22,13 @@ dependencies {
     compile 'io.vertx:vertx-config:3.5.3'
 }
 
-//mainClassName = 'Main'
-//task vertx {
-//        new File(".vertx").eachDir() { dir ->
-//            copy {
-//                with: "src/main/resources/webroot"
-//                into: "src"
-//            }
-//        }
-//}
-
-task abcd(type: Copy) {
-    from "src/main/resources/webroot"
-    into "src"
-}
-
-
 task webpack(type: Exec) {
     workingDir 'src/main/typescript'
     commandLine "cmd","/c", '.\\node_modules\\.bin\\webpack'
+}
+
+task webpackDevServer(type: Exec) {
+    workingDir 'src/main/typescript'
+    commandLine "cmd","/c", '.\\node_modules\\.bin\\webpack-dev-server'
 }
 

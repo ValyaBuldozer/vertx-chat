@@ -1,10 +1,10 @@
 import * as EventBus from "vertx3-eventbus-client";
-import {IMessage} from "../Classes/IMessage";
 
-export default class SocketConnection {
+class SocketConnection {
     private eventbusaddress : string;
     private eventbus : EventBus;
 
+    public token : string;
     public onpublish : Function;
     public ondisconnect : Function;
     public onregister : Function;
@@ -26,6 +26,13 @@ export default class SocketConnection {
         }
     }
 
+    public close() {
+        if(this.token) {
+            this.eventbus.publish();
+            this.eventbus.publish(this.eventbusaddress, {"type" : "disconnect"}, {"token" : this.token});
+        }
+    }
+
     public isConnected() {
         return (this.eventbus);
     }
@@ -35,30 +42,36 @@ export default class SocketConnection {
             console.log(err);
         }
 
-        const message : IMessage = msg.body;
+        const message = msg.body;
 
-        switch (message.type) {
-            case "publish":
+        switch (message.action) {
+            case "new-message":
                 if (this.onpublish) {
                     this.onpublish(message.username, message.text);
                 }
                 break;
-            case "user_disconnect":
+            case "user-logout":
                 if (this.ondisconnect) {
                     this.ondisconnect(message.username);
                 }
                 break;
-            case "user_connected":
+            case "user-login":
                 if (this.onregister) {
                    this.onregister(message.username);
                 }
+                break;
             default:
                 break;
         }
     }
 
-    sendMessage({username, text}) {
-        this.eventbus.publish(this.eventbusaddress, text, {"username" : username});
+    sendMessageFromToken(message : string) {
+        this.eventbus.publish(this.eventbusaddress,
+            message,
+            {
+                "type" : "message",
+                "token" : this.token
+            });
     }
 }
 
