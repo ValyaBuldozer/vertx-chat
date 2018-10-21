@@ -15,7 +15,8 @@ module.exports = {
         port: 9000,
         proxy: {
             '/eventbus' : {target: 'http://localhost:8080/', ws : true},
-            '/socketconfig' : 'http://localhost:8080/'
+            '/socketconfig' : 'http://localhost:8080/',
+            '/authorize' : 'http://localhost:8080/'
         }
     },
     output: {

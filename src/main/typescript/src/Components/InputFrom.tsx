@@ -2,9 +2,11 @@ import * as React from "react";
 import {Button, TextField, Paper} from "@material-ui/core";
 import { connect } from "react-redux";
 import {Component} from "react";
-import { socketConnection as connection } from "../Network/SocketConnection";
+import {socketConnection, socketConnection as connection} from "../Network/SocketConnection";
 import "../styles.css";
-import { logIn,addMessage } from "../Reducers/reducersCreactor";
+import { logIn, addClient } from "../Reducers/reducersCreactor";
+import {IState} from "../store";
+import {client} from "../Reducers/chatReducers";
 
 interface  IFormProps {
     username : string;
@@ -36,15 +38,13 @@ class InputForm extends Component<IFormProps, IFormState> {
         const {onSubmit, onLogin, isAuthorized} = this.props;
         return (
             <div className="inputRootDiv">
-                <Paper className="loginPaper">
+                <Paper className="loginPaper" elevation={4}>
                     <TextField  style={{width: 400}}
                                 value={this.state.message}
                                 onChange={(e) => this.handleChange(e)}
                                 label={isAuthorized ? "Message" : "Username"}/>
                     <Button onClick={() => isAuthorized ?
-                                            onSubmit({
-                                                text : this.state.message,
-                                                username : this.props.username}) :
+                                            onSubmit(this.state.message) :
                                             onLogin(this.state.message)}
                             variant={"text"}>
                         {isAuthorized ? "SEND" : "LOGIN"}
@@ -56,16 +56,40 @@ class InputForm extends Component<IFormProps, IFormState> {
 }
 
 export const Input = connect(
-    state => ({
+    (state : IState )=> ({
         username : state.user.username,
         isAuthorized : state.user.isAuthorized
     }),
     dispatch => ({
         onSubmit(message) {
-            connection.sendMessage(message);
+            connection.sendMessageFromToken(message);
         },
         onLogin(username : string) {
-            dispatch(logIn(username));
+            //dispatch(logIn(username));
+            console.log("authorize request " + username);
+            const request = new XMLHttpRequest();
+            request.open('POST', "/authorize");
+            request.onload = () => {
+                if(request.readyState === 4) {
+                    if (request.status === 200) {
+                        const response = JSON.parse(request.response);
+                        //socketConnection.sendMessageToAddress(response.token, "test");
+                        socketConnection.token = response.token;
+                        dispatch(logIn(username));
+                        response.users.forEach((user) => {
+                            dispatch(addClient(user));
+                        });
+                    } else {
+                        console.log(request.statusText);
+                    }
+                }
+            };
+            request.onerror = () => {
+                console.log(request.responseText);
+            };
+
+            request.send(JSON.stringify({username : username}));
+
         }
     })
 )(InputForm);

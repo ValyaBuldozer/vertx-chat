@@ -3,13 +3,16 @@ import { Component } from "react";
 import { connect } from "react-redux";
 import {Input} from "./InputFrom";
 import { Chat } from "./ChatHistory";
-import { addMessage } from "../Reducers/reducersCreactor";
+import { addMessage, addClient } from "../Reducers/reducersCreactor";
 import {socketConnection as connection} from "../Network/SocketConnection";
+import { Clients } from "./ClientsList";
+import {IState} from "../store";
 
 
 interface IAppProps {
     username : string;
     onMessageHandled : Function;
+    onUserRegistered : Function;
 }
 
 class AppComponent extends Component<IAppProps> {
@@ -29,6 +32,9 @@ class AppComponent extends Component<IAppProps> {
             connection.onpublish = (username, text) => {
                 messageHandler({username, text});
             };
+            connection.onregister = (username) => {
+                this.props.onUserRegistered(username);
+            }
         });
     }
 
@@ -46,7 +52,7 @@ class AppComponent extends Component<IAppProps> {
         };
         request.onerror = () => {
             console.log(request.responseText);
-        }
+        };
 
         request.send(null);
     }
@@ -54,8 +60,15 @@ class AppComponent extends Component<IAppProps> {
     render() {
         console.log("render");
         return (
-            <div>
-                <Chat />
+            <div className="appRoot">
+                <div className="base">
+                    <div className="clientsBase">
+                        <Clients/>
+                    </div>
+                    <div className="messagesBase">
+                        <Chat />
+                    </div>
+                </div>
                 <Input/>
             </div>
         )
@@ -63,12 +76,15 @@ class AppComponent extends Component<IAppProps> {
 }
 
 export const App = connect(
-    state => ({
-        username : state.username
+    ( state : IState) => ({
+        username : state.user.username
     }),
     dispatch => ({
         onMessageHandled(message) {
             dispatch(addMessage(message));
+        },
+        onUserRegistered(username) {
+            dispatch(addClient(username));
         }
     })
 )(AppComponent);

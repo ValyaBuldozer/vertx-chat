@@ -6,6 +6,9 @@ node_modules/
 out/
 .idea/
 dist/
+package-lock.json
+resources/
+build/
 
 # Ignore Gradle GUI config
 gradle-app.setting

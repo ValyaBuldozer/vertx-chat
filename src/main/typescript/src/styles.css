@@ -1,3 +1,13 @@
+body {
+    margin: 0px;
+}
+
+.appRoot {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+}
+
 .inputRootDiv {
     position: fixed;
     bottom: 10px;
@@ -13,7 +23,83 @@
     padding: 10px 25px;
 }
 
-.messageDiv {
+.msgRoot {
+    display: block;
+    border-bottom: solid 1px #e7e8ec;
+}
+
+.msgHeader {
     display: flex;
-    align-items: flex-end;
+    align-items: center;
+    color: dodgerblue;
+    font-size: 18px;
+    font-style: normal;
+}
+
+.msgBody {
+    box-sizing: border-box;
+    display: block;
+    padding-left: 20px;
+}
+
+.msgTimestamp {
+    margin-left: 20px;
+    font-size: 10px;
+    font-style: italic;
+    color: #e7e8ec;
+}
+
+.userListRoot {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 10px;
+}
+
+.base {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.clientsBase {
+    box-sizing: border-box;
+    width: 20vw;
+    padding: 20px;
+    height: 100%;
+}
+
+.clientsListBase {
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+}
+
+.messagesBase {
+    box-sizing: border-box;
+    width: 80vw;
+    padding: 20px;
+    height: 100%;
+}
+
+.chatHistoryRoot {
+    height: 100%;
+    box-sizing: border-box;
+    padding: 20px;
+    overflow-y: scroll;
+}
+
+hr {
+    width: 100%;
+    size: 3px;
+    margin: 5px 30px;
+    color: darkgray;
 }
