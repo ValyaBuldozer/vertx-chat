@@ -1,8 +1,9 @@
 package web.valyabuldozer.chat.vertx;
 
-import com.fasterxml.jackson.databind.util.JSONPObject;
 import io.vertx.core.AbstractVerticle;
+import io.vertx.core.Future;
 import io.vertx.core.eventbus.DeliveryOptions;
+import io.vertx.core.eventbus.ReplyException;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
@@ -13,10 +14,10 @@ import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.StaticHandler;
 import io.vertx.ext.web.handler.sockjs.BridgeOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
+import web.valyabuldozer.chat.util.ServiceAction;
+import web.valyabuldozer.chat.util.ServiceErrorCode;
 import web.valyabuldozer.chat.util.TokenGenerator;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.sql.Timestamp;
 import java.util.*;
 
@@ -26,53 +27,41 @@ public class Server extends AbstractVerticle {
     private final String DEFAULT_EB_ADDRESS = "client.to.server";
     private final String DEFAULT_USERLIST_ADDRESS = "clients.updates";
     private final String DEFAULT_SOCKET_URL = "/eventbus/";
+    private final String DEFAULT_DB_SERVICE_ADDRESS = "db.service";
 
     private TokenGenerator tokenGenerator = new TokenGenerator();
     private Map<String, String> users = new HashMap<>();
     private SockJSHandler handler;
 
     @Override
-    public void start() {
-        if(deploy()) {
-            createSockHandler();
-        }
-    }
+    public void start(Future<Void> startFuture) {
 
-    private boolean deploy() {
         Integer hostPort = config().getInteger("http.port", DEFAULT_HTTP_PORT);
         Router router = Router.router(vertx);
 
         handler = SockJSHandler.create(vertx);
         router.route(DEFAULT_SOCKET_URL + "*").handler(handler);
 
-        router.route("/socketconfig").handler(this::configRequestHandler);
-        router.route("/authorize").handler(BodyHandler.create());
-        router.route("/authorize").handler(this::authorizationHandler);
+        router.route("/socketconfig").produces("application/json").handler(this::configRequestHandler);
+        router.post("/authorize").produces("application/json").handler(BodyHandler.create());
+        router.post("/authorize").produces("application/json").handler(this::authorizationHandler);
+        router.post("/register").produces("application/json").handler(BodyHandler.create());
+        router.post("/register").produces("application/json").handler(this::registerUserHandler);
 
         router.route().handler(StaticHandler.create().setCachingEnabled(false));
 
         vertx.createHttpServer().
-                requestHandler(router::accept)
-                .listen(
-                        hostPort,
-                        result -> {
-                            if (result.succeeded()) {
-                                System.out.print("Server started");
-                            } else {
-                                System.out.print("Failed to start server");
-                            }
-                        }
-                );
-
-        try {
-            String address = InetAddress.getLocalHost().getHostAddress();
-            System.out.println("Access to \"CHAT\" at the following address: \nhttp://" + address + ":" + hostPort);
-        } catch (UnknownHostException e) {
-            System.out.println("Failed to get the local address: [" + e.toString() + "]");
-            return false;
-        }
-
-        return true;
+                requestHandler(router::accept).listen(hostPort, result -> {
+                    if (result.succeeded()) {
+                        System.out.print("Server started");
+                        createSockHandler();
+                        startFuture.complete();
+                    } else {
+                        System.out.print("Failed to start server");
+                        startFuture.fail(result.cause());
+                    }
+                }
+        );
     }
 
     private void createSockHandler() {
@@ -97,8 +86,9 @@ public class Server extends AbstractVerticle {
         });
     }
 
+
     private void handlePublishEvent(JsonObject rawMessage) {
-        if(rawMessage == null) {
+        if (rawMessage == null) {
             System.out.println("WARNING : empty text at publish handler");
             return;
         }
@@ -118,11 +108,10 @@ public class Server extends AbstractVerticle {
                 JsonObject message = new JsonObject()
                         .put("action", "new-message")
                         .put("username", users.get(token))
-                        .put("message", body)
+                        .put("text", body)
                         .put("timestamp", new Timestamp(new Date().getTime()).toString());
 
-                vertx.eventBus().publish(DEFAULT_EB_ADDRESS,
-                        message);
+                vertx.eventBus().publish(DEFAULT_EB_ADDRESS, message);
                 break;
             }
 
@@ -138,14 +127,14 @@ public class Server extends AbstractVerticle {
     }
 
     private void handleCloseEvent(JsonObject rawMessage) {
-        if(rawMessage == null) {
+        if (rawMessage == null) {
             System.out.println("WARNING : empty text at close handler");
             return;
         }
 
-       if (rawMessage.getJsonObject("token") == null) {
+        if (rawMessage.getJsonObject("token") == null) {
 
-       }
+        }
     }
 
     private void configRequestHandler(RoutingContext context) {
@@ -157,7 +146,7 @@ public class Server extends AbstractVerticle {
                 .end(config.toString());
     }
 
-    private void authorizationHandler( RoutingContext context) {
+    private void authorizationHandler(RoutingContext context) {
         HttpServerResponse response = context.response();
 
         try {
@@ -165,26 +154,23 @@ public class Server extends AbstractVerticle {
             JsonObject body = new JsonObject(json);
 
             if (!body.containsKey("username")) {
-                response.setStatusCode(500).end("No username specified in body");
+                response.setStatusCode(400).end("No username specified in body");
+                return;
+            }
+
+            if (!body.containsKey("password")) {
+                response.setStatusCode(400).end("No password header in request body");
                 return;
             }
 
             String username = body.getString("username");
-
+            String password = body.getString("password");
             if (this.users.containsValue(username)) {
-                //TODO : change status code
-                response.setStatusCode(500).end("User with this username already in system");
+                response.setStatusCode(401).end("User with this username already in system");
                 return;
             }
-            String token = tokenGenerator.getToken(10);
-            List<String> users = new ArrayList<>(this.users.values());
-            logInUser(token, username);
 
-            JsonObject responseBody = new JsonObject()
-                    .put("token", token)
-                    .put("users", new JsonArray(users));
-
-            response.setStatusCode(200).end(responseBody.toString());
+            logInUser(username, password, response);
         } catch (Exception e) {
             e.printStackTrace();
             response.setStatusCode(500).end("Exception handled");
@@ -195,13 +181,74 @@ public class Server extends AbstractVerticle {
         vertx.eventBus().publish(DEFAULT_EB_ADDRESS, message);
     }
 
-    private void logInUser(String token, String username) {
-        users.put(token, username);
+    private void logInUser(String username, String password, HttpServerResponse response) {
+        vertx.eventBus().send(DEFAULT_DB_SERVICE_ADDRESS,
+                new JsonObject().put("username", username).put("password", password),
+                new DeliveryOptions().addHeader("action", ServiceAction.LOGIN.getValue()),
+                reply -> {
+                    if (reply.succeeded()) {
+                        String token = tokenGenerator.getToken(10);
+                        List<String> users = new ArrayList<>(this.users.values());
 
-        JsonObject updateMessage = new JsonObject()
-                .put("action", "user-login")
-                .put("username", username);
-        publishEventBusMessage(updateMessage);
+                        JsonObject responseBody = new JsonObject()
+                                .put("token", token)
+                                .put("users", new JsonArray(users));
+
+                        response.setStatusCode(200).end(responseBody.toString());
+
+                        JsonObject updateMessage = new JsonObject()
+                                .put("action", "user-login")
+                                .put("username", username);
+                        publishEventBusMessage(updateMessage);
+                    } else {
+                        ReplyException exception = (ReplyException) reply.cause();
+                        switch (ServiceErrorCode.getError(exception.failureCode())) {
+
+                            case USER_NOT_FOUND:
+                                response.setStatusCode(400).end("User with this username not found");
+                                break;
+                            case INVALID_PASSWORD:
+                                response.setStatusCode(400).end("Invalid password");
+                                break;
+                            default:
+                                System.out.println(reply.cause());
+                                response.setStatusCode(500).end("Interanl error");
+                        }
+                    }
+                });
+    }
+
+    private void registerUserHandler(RoutingContext routingContext) {
+        JsonObject message = new JsonObject(routingContext.getBodyAsString());
+        String username = message.getString("username");
+        String password = message.getString("password");
+
+        if (username == null || password == null) {
+            routingContext.response().setStatusCode(400).end("Invalid request format");
+            return;
+        }
+
+        vertx.eventBus().send(DEFAULT_DB_SERVICE_ADDRESS,
+                new JsonObject().put("username", username).put("password", password),
+                new DeliveryOptions().addHeader("action", ServiceAction.REGISTER_USER.getValue()),
+                reply -> {
+            if (reply.succeeded()) {
+                routingContext.response().setStatusCode(200).end("User registred");
+            } else {
+                ReplyException exception = (ReplyException) reply.cause();
+
+                switch (ServiceErrorCode.getError(exception.failureCode())) {
+
+                    case USER_ALREADY_REGISTERED:
+                        routingContext.response().setStatusCode(409).end("User already registered");
+                        break;
+                    case INTERNAL_ERROR:
+                        System.out.println(exception.getCause());
+                        routingContext.response().setStatusCode(500).end("Internal error");
+                        break;
+                }
+            }
+        });
     }
 
     private void logOutUser(String token) {
