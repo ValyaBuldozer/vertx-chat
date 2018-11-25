@@ -3,7 +3,7 @@ import {
     SEND_MESSAGE,
     CREATE_MESSAGE,
     LOG_IN,
-    LOG_OUT, ADD_CLIENT, REMOVE_CLIENT
+    LOG_OUT, ADD_CLIENT, REMOVE_CLIENT, ADD_CLIENTS
 } from "../Constants/actionTypes";
 import uuid = require("uuid");
 import Client from "../Models/client";
@@ -61,9 +61,15 @@ export const clients = (state : Array<Client> = [], action : any) => {
             return [
                 ...state,
                 client({} as Client, action)
-            ] as Array<Client>;
+            ] as Client[];
+        case ADD_CLIENTS:
+            return [
+                ...state,
+                ...action.clients
+            ] as Client[];
         case REMOVE_CLIENT:
             return state.filter((c) => c.id !== action.id);
+
         default:
             return state;
     }

@@ -16,7 +16,9 @@ module.exports = {
         proxy: {
             '/eventbus' : {target: 'http://localhost:8080/', ws : true},
             '/socketconfig' : 'http://localhost:8080/',
-            '/authorize' : 'http://localhost:8080/'
+            '/authorize' : 'http://localhost:8080/',
+            '/register' : 'http://localhost:8080/',
+            '/info' : 'http://localhost:8080/'
         }
     },
     output: {

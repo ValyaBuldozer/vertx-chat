@@ -42,13 +42,14 @@ public class Server extends AbstractVerticle {
         handler = SockJSHandler.create(vertx);
         router.route(DEFAULT_SOCKET_URL + "*").handler(handler);
 
-        router.route("/socketconfig").produces("application/json").handler(this::configRequestHandler);
-        router.post("/authorize").produces("application/json").handler(BodyHandler.create());
-        router.post("/authorize").produces("application/json").handler(this::authorizationHandler);
-        router.post("/register").produces("application/json").handler(BodyHandler.create());
-        router.post("/register").produces("application/json").handler(this::registerUserHandler);
+        router.route("/socketconfig").produces("application/json").consumes("application/json").handler(this::configRequestHandler);
+        router.route("/authorize").produces("application/json").consumes("application/json").handler(BodyHandler.create());
+        router.route("/authorize").produces("application/json").consumes("application/json").handler(this::authorizationHandler);
+        router.post("/register").produces("application/json").consumes("application/json").handler(BodyHandler.create());
+        router.post("/register").produces("application/json").consumes("application/json").handler(this::registerUserHandler);
 
         router.route().handler(StaticHandler.create().setCachingEnabled(false));
+        createSockHandler();
 
         vertx.createHttpServer().
                 requestHandler(router::accept).listen(hostPort, result -> {
@@ -111,7 +112,7 @@ public class Server extends AbstractVerticle {
                         .put("text", body)
                         .put("timestamp", new Timestamp(new Date().getTime()).toString());
 
-                vertx.eventBus().publish(DEFAULT_EB_ADDRESS, message);
+                publishEventBusMessage(message);
                 break;
             }
 
@@ -189,6 +190,7 @@ public class Server extends AbstractVerticle {
                     if (reply.succeeded()) {
                         String token = tokenGenerator.getToken(10);
                         List<String> users = new ArrayList<>(this.users.values());
+                        this.users.put(token, username);
 
                         JsonObject responseBody = new JsonObject()
                                 .put("token", token)

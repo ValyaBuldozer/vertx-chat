@@ -7,10 +7,13 @@ import { addMessage, addClient } from "../Reducers/reducersCreactor";
 import {socketConnection as connection} from "../Network/SocketConnection";
 import { Clients } from "./ClientsList";
 import {IState} from "../store";
+import {socketConfigRequest} from "../Network/RestService";
+import {UserForm} from "./UserForm";
 
 
 interface IAppProps {
     username : string;
+    isAuthorized : boolean;
     onMessageHandled : Function;
     onUserRegistered : Function;
 }
@@ -27,7 +30,8 @@ class AppComponent extends Component<IAppProps> {
     }
 
     private setUpSocketConnection(messageHandler : Function) {
-        this.loadConfigs(({url, ebaddress}) => {
+        socketConfigRequest().then((responce) => {
+            const {url, ebaddress} = JSON.parse(responce.toString());
             connection.connect(url, ebaddress);
             connection.onpublish = (username, text) => {
                 messageHandler({username, text});
@@ -35,50 +39,36 @@ class AppComponent extends Component<IAppProps> {
             connection.onregister = (username) => {
                 this.props.onUserRegistered(username);
             }
-        });
-    }
-
-    private loadConfigs(callback : Function) {
-        const request = new XMLHttpRequest();
-        request.open('GET', "/socketconfig");
-        request.onload = () => {
-            if(request.readyState === 4) {
-                if (request.status === 200) {
-                    callback(JSON.parse(request.response));
-                } else {
-                    console.log(request.statusText);
-                }
-            }
-        };
-        request.onerror = () => {
-            console.log(request.responseText);
-        };
-
-        request.send(null);
+        }).catch(err => console.error(err))
     }
 
     render() {
-        console.log("render");
-        return (
-            <div className="appRoot">
-                <div className="base">
-                    <div className="clientsBase">
-                        <Clients/>
+        if (this.props.isAuthorized) {
+            return (
+                <div className="appRoot">
+                    <div className="base">
+                        <div className="clientsBase">
+                            <Clients/>
+                        </div>
+                        <div className="messagesBase">
+                            <Chat />
+                        </div>
                     </div>
-                    <div className="messagesBase">
-                        <Chat />
-                    </div>
+                    <Input/>
                 </div>
-                <Input/>
-            </div>
+            )
+        }
+
+        return (
+            <UserForm/>
         )
     }
 }
 
 export const App = connect(
     ( state : IState) => ({
-        username : state.user.username
-    }),
+        ...state.user
+    } as IAppProps),
     dispatch => ({
         onMessageHandled(message) {
             dispatch(addMessage(message));
